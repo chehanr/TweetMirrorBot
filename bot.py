@@ -68,44 +68,39 @@ class GenerateReply:
     def imgur(self, urls):
         """Generate submission reply with imgur template."""
         header_images = ''
+        reply_body = ''
         date_time = datetime.datetime.strptime(
             str(self._tweet.created_at), '%Y-%m-%d  %H:%M:%S')
 
         for i, imgur_image in enumerate(urls):
             i += 1
-            header_images += ('''
-            # [**Imgur mirror image%(index)s**](%(imgur)s "Imgur mirror image%(index)s")
-            ''' % {
+            header_images += ('# [**Imgur mirror image%(index)s**](%(imgur)s "Imgur mirror image%(index)s")\n' % {
                 'index': str(i).rjust(2) if len(urls) > 1 else '',
                 'imgur': imgur_image
             })
 
-        reply = textwrap.dedent('''
-            %(images)s
-
-            "%(full_text)s" 
-            
-            ~ %(user_name)s ([@%(screen_name)s](https://twitter.com/%(screen_name)s/ "Twitter profile")) %(is_verified)s
-
-            ^(Tweeted on %(date)s at %(time)s)
-
-            &nbsp;
-
-
-            *****
-            %(footer)s
-        ''' % {
-            'images': header_images.strip(),
-            'full_text': self._tweet.full_text.strip(),
+        reply_body += ('%s' % (header_images.strip()))
+        reply_body += '\n'
+        # TODO Add bad chars to escape.
+        reply_body += ('"%s"\n' %
+                       (self._tweet.full_text.strip().replace('#', '\\#')))
+        reply_body += '\n'
+        reply_body += ('~ %(user_name)s ([@%(screen_name)s](https://twitter.com/%(screen_name)s/ "Twitter profile")) %(is_verified)s\n' % {
             'user_name': self._tweet.user.name.strip(),
             'screen_name': self._tweet.user.screen_name.strip(),
-            'is_verified': '^([verified])' if self._tweet.user.verified else '',
+            'is_verified': '^([verified])' if self._tweet.user.verified else ''})
+        reply_body += '\n'
+        reply_body += ('^(Tweeted on %(date)s at %(time)s)\n' % {
             'date': date_time.date(),
-            'time': date_time.time(),
-            'footer': REPLY_FOOTER.strip()
+            'time': date_time.time()
         })
+        reply_body += '\n'
+        reply_body += ('&nbsp;\n')
+        reply_body += '\n\n'
+        reply_body += ('****\n')
+        reply_body += ('%s' % (REPLY_FOOTER.strip()))
 
-        return reply
+        return reply_body
 
 
 class UploadTo:
@@ -271,32 +266,43 @@ def main():
 
         >> > Add subreddits to "subreddits.txt" and
         >> > use '#' to comment out unwanted entries.
+
+        >> > Add subreddits to "blacklist.txt" to
+        >> > ignore them while monitoring "/r/all".
     """
     try:
-        with open(PATH + 'subreddits.txt') as file:
-            lines = filter(None, (line.rstrip() for line in file))
-            subreddits = '+'.join(line[1] for line in enumerate(lines)
-                                  if not line[1].startswith('#'))
-            if subreddits:
-                message = 'checking subreddits %s ...' % (subreddits)
-                sys.stdout.writelines('%s \n' % (message))
-                logging.info(message)
-                for submission in REDDIT_API.subreddit(subreddits).new():
-                    tweet_status_ids = []
-                    if not HasVisited.redis_check(submission.id):
-                        if Regex().is_twitter_url(submission.url):
-                            tweet_status_ids.append(
-                                Regex().tweet_status_id(submission.url))
-                        if tweet_status_ids:
-                            for tweet_status_id in tweet_status_ids:
-                                post_reply(tweet_status_id, submission)
-                    else:
-                        message = 'submission %s in /r/%s already processed, skipping...' % (
-                            submission.id, submission.subreddit)
-                        sys.stdout.writelines('%s \n' % (message))
-                        logging.info(message)
+        with open(PATH + 'blacklist.txt', 'r') as file:
+            blacklist = [line.rstrip().lower() for line in file]
     except FileNotFoundError as err:
         logging.error(err)
+    else:
+        try:
+            with open(PATH + 'subreddits.txt') as file:
+                lines = filter(None, (line.rstrip() for line in file))
+                subreddits = '+'.join(line[1] for line in enumerate(lines)
+                                      if not line[1].startswith('#'))
+                if subreddits:
+                    message = 'checking subreddits %s ...' % (subreddits)
+                    sys.stdout.writelines('%s \n' % (message))
+                    logging.info(message)
+                    for submission in REDDIT_API.subreddit(subreddits).new():
+                        tweet_status_ids = []
+                        if not submission.subreddit.display_name.lower() in blacklist:
+                            if not HasVisited.redis_check(submission.id):
+                                if Regex().is_twitter_url(submission.url):
+                                    tweet_status_ids.append(
+                                        Regex().tweet_status_id(submission.url))
+                                if tweet_status_ids:
+                                    for tweet_status_id in tweet_status_ids:
+                                        post_reply(tweet_status_id, submission)
+                            else:
+                                message = 'submission %s in /r/%s already processed, skipping...' % (
+                                    submission.id, submission.subreddit)
+                                sys.stdout.writelines('%s \n' % (message))
+                                logging.info(message)
+
+        except FileNotFoundError as err:
+            logging.error(err)
 
 
 if __name__ == '__main__':
