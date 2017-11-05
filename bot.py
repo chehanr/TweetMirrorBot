@@ -17,7 +17,7 @@ import requests
 import tweepy
 
 CWD = os.getcwd()
-PATH = CWD + '\\'
+PATH = CWD + '/'
 
 REDIS_URL = os.getenv('REDISTOGO_URL', 'REDIS://localhost:6379')
 REDDIT_CLIENT_ID = os.getenv('REDDIT_CLIENT_ID')
