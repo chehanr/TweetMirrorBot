@@ -175,7 +175,7 @@ class Regex:
         return status_id
 
 
-class TweetStatus():
+class TweetStatus:
     """Handle tweepy API.
 
     :param tweet_status_id: Status ID of the tweet.
@@ -269,8 +269,8 @@ def main():
     """
     Usage: :
 
-        >> > Add subreddits to "subreddits.txt"
-        >> > Use '#' to comment out unwanted entries.
+        >> > Add subreddits to "subreddits.txt" and
+        >> > use '#' to comment out unwanted entries.
     """
     try:
         with open(PATH + 'subreddits.txt') as file:
