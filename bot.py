@@ -96,9 +96,9 @@ class GenerateReply:
             %(footer)s
         ''' % {
             'images': header_images.strip(),
-            'full_text': self._tweet.full_text,
-            'user_name': self._tweet.user.name,
-            'screen_name': self._tweet.user.screen_name,
+            'full_text': self._tweet.full_text.strip(),
+            'user_name': self._tweet.user.name.strip(),
+            'screen_name': self._tweet.user.screen_name.strip(),
             'is_verified': '^([verified])' if self._tweet.user.verified else '',
             'date': date_time.date(),
             'time': date_time.time(),
