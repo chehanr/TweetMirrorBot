@@ -285,8 +285,8 @@ def main():
                     message = 'checking subreddits %s ...' % (subreddits)
                     sys.stdout.writelines('%s \n' % (message))
                     logging.info(message)
-                    for submission in REDDIT_API.subreddit(subreddits).stream.submissions():
-                        # for submission in REDDIT_API.subreddit(subreddits).new():
+                    # for submission in REDDIT_API.subreddit(subreddits).stream.submissions():
+                    for submission in REDDIT_API.subreddit(subreddits).new():
                         tweet_status_ids = []
                         if not submission.subreddit.display_name.lower() in blacklist:
                             if not HasVisited.redis_check(submission.id):
