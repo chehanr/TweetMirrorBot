@@ -1,0 +1,23 @@
+{
+  "name": "TweetMirrorBot",
+  "description": "A Reddit bot that mirrors images from tweets (by /u/chehanr).",
+  "keywords": [
+    "python",
+    "reddit",
+    "bot"
+  ],
+  "website": "https://chehanr.github.io/",
+  "repository": "https://github.com/chehanr/TweetMirrorBot",
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "free"
+    }
+  },
+  "image": "heroku/python",
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ]
+}
