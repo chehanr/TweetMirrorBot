@@ -149,7 +149,7 @@ class Regex:
         self.twitter_com_regex = r'^https?:\/\/twitter\.com\/(?:#!\/)?(\w+)\/status(es)?\/(\d+)'
         # t.co just in case  (not allowed on reddit.)
         self.t_co_regex = r'^https?:\/\/t\.co\/(\w+)'
-        self.md_regex = r'(\#|\*|\^|\~|\/|\\|\_|\>|\`|\[|\])'
+        self.md_regex = r'(\#|\*|\^|\~|\\|\_|\>|\`|\[|\])'
 
     def is_twitter_url(self, url):
         """Return ``True`` if is twitter url."""
