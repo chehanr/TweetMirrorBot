@@ -8,7 +8,6 @@ import logging
 import os
 import re
 import sys
-import textwrap
 
 import praw
 import pyimgur
@@ -74,29 +73,28 @@ class GenerateReply:
 
         for i, imgur_image in enumerate(urls):
             i += 1
-            header_images += ('# [**Imgur mirror image%(index)s**](%(imgur)s "Imgur mirror image%(index)s")\n' % {
+            header_images += ('##[Imgur mirror image%(index)s](%(imgur)s "Imgur mirror image%(index)s")\n' % {
                 'index': str(i).rjust(2) if len(urls) > 1 else '',
                 'imgur': imgur_image
             })
 
         reply_body += ('%s' % (header_images.strip()))
-        reply_body += '\n'
-        # TODO Add bad chars to escape.
+        reply_body += ('\n')
         reply_body += ('"%s"\n' %
-                       (self._tweet.full_text.strip().replace('#', '\\#')))
-        reply_body += '\n'
+                       (Regex().sanitize_text(self._tweet.full_text.strip())))
+        reply_body += ('\n')
         reply_body += ('~ %(user_name)s ([@%(screen_name)s](https://twitter.com/%(screen_name)s/ "Twitter profile")) %(is_verified)s\n' % {
             'user_name': self._tweet.user.name.strip(),
             'screen_name': self._tweet.user.screen_name.strip(),
             'is_verified': '^([verified])' if self._tweet.user.verified else ''})
-        reply_body += '\n'
+        reply_body += ('\n')
         reply_body += ('^(Tweeted on %(date)s at %(time)s)\n' % {
             'date': date_time.date(),
             'time': date_time.time()
         })
-        reply_body += '\n'
+        reply_body += ('\n')
         reply_body += ('&nbsp;\n')
-        reply_body += '\n\n'
+        reply_body += ('\n\n')
         reply_body += ('****\n')
         reply_body += ('%s' % (REPLY_FOOTER.strip()))
 
@@ -151,6 +149,7 @@ class Regex:
         self.twitter_com_regex = r'^https?:\/\/twitter\.com\/(?:#!\/)?(\w+)\/status(es)?\/(\d+)'
         # t.co just in case  (not allowed on reddit.)
         self.t_co_regex = r'^https?:\/\/t\.co\/(\w+)'
+        self.md_regex = r'(\#|\*|\^|\~|\/|\\|\_|\>|\`|\[|\])'
 
     def is_twitter_url(self, url):
         """Return ``True`` if is twitter url."""
@@ -168,6 +167,12 @@ class Regex:
             if response.history:
                 status_id = self.tweet_status_id(response.twitter_url)
         return status_id
+
+    def sanitize_text(self, string):
+        """Return sanitized string of ``string`` for markdown."""
+        if re.findall(self.md_regex, string):
+            clean_string = re.sub(self.md_regex, r'\\\1', string)
+            return clean_string
 
 
 class TweetStatus:
