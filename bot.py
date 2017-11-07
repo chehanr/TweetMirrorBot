@@ -184,7 +184,7 @@ class TweetStatus:
     def __init__(self, tweet_status_id):
         self.tweet = TWITTER_API.get_status(
             tweet_status_id, tweet_mode='extended')
-        self.media_urls_list = []
+        self._media_urls_list = []
 
     def media_url_type(self):
         """Return the media type of ``Tweet()``."""
@@ -207,8 +207,8 @@ class TweetStatus:
         """Return a photo list of ``Tweet()``."""
         if hasattr(self.tweet, 'extended_entities'):
             for image in self.tweet.extended_entities.get('media', []):
-                self.media_urls_list.append(image['media_url'])
-        return self.media_urls_list
+                self._media_urls_list.append(image['media_url'])
+        return self._media_urls_list
 
     def get_animated_gif(self):
         """Return a animated_gif list of ``Tweet()``."""
@@ -216,8 +216,8 @@ class TweetStatus:
             for image in self.tweet.extended_entities.get('media', []):
                 for gif_varient in image['video_info'].get('variants'):
                     if 'video/mp4' in gif_varient['content_type']:
-                        self.media_urls_list.append(gif_varient['url'])
-        return self.media_urls_list
+                        self._media_urls_list.append(gif_varient['url'])
+        return self._media_urls_list
 
     def get_video(self):
         """Return a video list of ``Tweet()``."""
@@ -225,8 +225,8 @@ class TweetStatus:
             for image in self.tweet.extended_entities.get('media', []):
                 for video_varient in image['video_info'].get('variants'):
                     if 'video/mp4' in video_varient['content_type']:
-                        self.media_urls_list.append(video_varient['url'])
-        return self.media_urls_list
+                        self._media_urls_list.append(video_varient['url'])
+        return self._media_urls_list
 
 
 def post_reply(tweet_status_id, submission):
@@ -285,7 +285,7 @@ def main():
             with open(PATH + 'subreddits.txt') as file:
                 lines = filter(None, (line.rstrip() for line in file))
                 subreddits = '+'.join(line[1] for line in enumerate(lines)
-                                      if not line[1].startswith('#'))
+                                      if not line[1].startswith('#') and not line[1] in blacklist)
                 if subreddits:
                     message = 'checking subreddits %s ...' % (subreddits)
                     sys.stdout.writelines('%s \n' % (message))
@@ -293,19 +293,18 @@ def main():
                     # for submission in REDDIT_API.subreddit(subreddits).stream.submissions():
                     for submission in REDDIT_API.subreddit(subreddits).new():
                         tweet_status_ids = []
-                        if not submission.subreddit.display_name.lower() in blacklist:
-                            if not HasVisited.redis_check(submission.id):
-                                if Regex().is_twitter_url(submission.url):
-                                    tweet_status_ids.append(
-                                        Regex().tweet_status_id(submission.url))
-                                if tweet_status_ids:
-                                    for tweet_status_id in tweet_status_ids:
-                                        post_reply(tweet_status_id, submission)
-                            else:
-                                message = 'submission %s in /r/%s already processed, skipping...' % (
-                                    submission.id, submission.subreddit)
-                                sys.stdout.writelines('%s \n' % (message))
-                                logging.info(message)
+                        if not HasVisited.redis_check(submission.id):
+                            if Regex().is_twitter_url(submission.url):
+                                tweet_status_ids.append(
+                                    Regex().tweet_status_id(submission.url))
+                            if tweet_status_ids:
+                                for tweet_status_id in tweet_status_ids:
+                                    post_reply(tweet_status_id, submission)
+                        else:
+                            message = 'submission %s in /r/%s already processed, skipping...' % (
+                                submission.id, submission.subreddit)
+                            sys.stdout.writelines('%s \n' % (message))
+                            logging.info(message)
 
         except FileNotFoundError as err:
             logging.error(err)
