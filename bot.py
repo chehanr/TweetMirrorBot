@@ -173,6 +173,8 @@ class Regex:
         if re.findall(self.md_regex, string):
             clean_string = re.sub(self.md_regex, r'\\\1', string)
             return clean_string
+        else:
+            return string
 
 
 class TweetStatus:
