@@ -146,9 +146,9 @@ class Regex:
     """Handle Regex work."""
 
     def __init__(self):
-        self.twitter_com_regex = r'^https?:\/\/twitter\.com\/(?:#!\/)?(\w+)\/status(es)?\/(\d+)'
+        self.twitter_com_regex = r'https?:\/\/twitter\.com\/(?:#!\/)?(\w+)\/status(es)?\/(\d+)'
         # t.co just in case  (not allowed on reddit.)
-        self.t_co_regex = r'^https?:\/\/t\.co\/(\w+)'
+        self.t_co_regex = r'https?:\/\/t\.co\/(\w+)'
         self.md_regex = r'(\#|\*|\^|\~|\\|\_|\>|\`|\[|\])'
 
     def is_twitter_url(self, url):
