@@ -174,12 +174,16 @@ class Regex:
         t_co_urls = re.finditer(self.t_co_regex, string)
         for t_co_url in t_co_urls:
             response = requests.get(t_co_url.group(0))
-            if response.history:
+            if response.history[1]:
                 if self.is_twitter_url(response.url):
                     string = string.replace(t_co_url.group(0), '')
                 else:
                     string = string.replace(
                         t_co_url.group(0), response.history[1].url)
+            else:
+                if self.is_twitter_url(response.url):
+                    string = string.replace(t_co_url.group(0), '')
+
         clean_string = re.sub(self.md_regex, r'\\\1', string)
         return clean_string
 
