@@ -106,7 +106,7 @@ class GenerateReply:
                 'imgur': imgur_image
             })
 
-        self.reply_body += self.header_media.strip()
+        self.header_media += self.reply_body
         return self.reply_body
 
     def streamable(self, url):
@@ -115,7 +115,7 @@ class GenerateReply:
             'streamable': url
         })
 
-        self.reply_body += self.header_media.strip()
+        self.header_media += self.reply_body
         return self.reply_body
 
 
