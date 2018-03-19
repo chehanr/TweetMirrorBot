@@ -170,11 +170,16 @@ class Regex:
 
     def sanitize_text(self, string):
         """Return sanitized string of ``string`` for markdown."""
-        if re.findall(self.md_regex, string):
-            clean_string = re.sub(self.md_regex, r'\\\1', string)
-            return clean_string
-        else:
-            return string
+        t_co_urls = re.finditer(self.t_co_regex, string)
+        t_co_urls_sub = re.sub(self.t_co_regex, '', string)
+        for t_co_url in t_co_urls:
+            response = requests.get(t_co_url.group(0))
+            if response.history:
+                if not self.is_twitter_url(response.url):
+                    t_co_urls_sub += ('\n%s' % (response.url))
+
+        clean_string = re.sub(self.md_regex, r'\\\1', t_co_urls_sub)
+        return clean_string
 
 
 class TweetStatus:
