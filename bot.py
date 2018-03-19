@@ -80,8 +80,9 @@ class GenerateReply:
 
         reply_body += ('%s' % (header_images.strip()))
         reply_body += ('\n')
-        reply_body += ('"%s"\n' %
-                       (Regex().sanitize_text(self._tweet.full_text.strip())))
+        reply_body += ('%(quotes)s%(body)s%(quotes)s"\n' % {
+            'body': Regex().sanitize_text(self._tweet.full_text.strip()),
+            'quotes': '"' if self._tweet.full_text else ''})
         reply_body += ('\n')
         reply_body += ('~ %(user_name)s ([@%(screen_name)s](https://twitter.com/%(screen_name)s/ "Twitter profile")) %(is_verified)s\n' % {
             'user_name': self._tweet.user.name.strip(),
