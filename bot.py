@@ -296,34 +296,34 @@ def post_reply(tweet_status_id, submission):
             sys.stdout.writelines('%s \n' % (message))
             logging.info(message)
 
-    elif tweet_status.media_url_type() == 'video':
-        streamable_title = 'Tweet by @%s (Mirror)' % (
-            tweet_status.tweet.user.name)
-        if not HasVisited.check_comments(submission):
-            try:
-                video = tweet_status.get_video()
-                video_url = UploadTo.streamable(video, streamable_title)
-                generated_reply = GenerateReply(
-                    tweet_status.tweet).streamable(video_url)
-            except Exception as err:
-                logging.exception('failed to upload because %s', err)
-            else:
-                try:
-                    submission.reply(generated_reply)
-                except Exception as err:
-                    logging.exception('failed to reply because %s', err)
-                else:
-                    HasVisited.redis_set(submission.id, tweet_status_id)
-                    message = 'processed submission %s on /r/%s.' % (
-                        submission.id, submission.subreddit)
-                    sys.stdout.writelines('%s \n' % (message))
-                    logging.info(message)
-        else:
-            HasVisited.redis_set(submission.id, tweet_status_id)
-            message = 'reply found in submission %s in /r/%s, skipping...' % (
-                submission.id, submission.subreddit)
-            sys.stdout.writelines('%s \n' % (message))
-            logging.info(message)
+    # elif tweet_status.media_url_type() == 'video':
+    #     streamable_title = 'Tweet by @%s (Mirror)' % (
+    #         tweet_status.tweet.user.name)
+    #     if not HasVisited.check_comments(submission):
+    #         try:
+    #             video = tweet_status.get_video()
+    #             video_url = UploadTo.streamable(video, streamable_title)
+    #             generated_reply = GenerateReply(
+    #                 tweet_status.tweet).streamable(video_url)
+    #         except Exception as err:
+    #             logging.exception('failed to upload because %s', err)
+    #         else:
+    #             try:
+    #                 submission.reply(generated_reply)
+    #             except Exception as err:
+    #                 logging.exception('failed to reply because %s', err)
+    #             else:
+    #                 HasVisited.redis_set(submission.id, tweet_status_id)
+    #                 message = 'processed submission %s on /r/%s.' % (
+    #                     submission.id, submission.subreddit)
+    #                 sys.stdout.writelines('%s \n' % (message))
+    #                 logging.info(message)
+    #     else:
+    #         HasVisited.redis_set(submission.id, tweet_status_id)
+    #         message = 'reply found in submission %s in /r/%s, skipping...' % (
+    #             submission.id, submission.subreddit)
+    #         sys.stdout.writelines('%s \n' % (message))
+    #         logging.info(message)
 
 
 def main():
