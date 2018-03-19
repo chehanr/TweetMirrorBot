@@ -171,14 +171,11 @@ class Regex:
     def sanitize_text(self, string):
         """Return sanitized string of ``string`` for markdown."""
         t_co_urls = re.finditer(self.t_co_regex, string)
-        t_co_urls_sub = re.sub(self.t_co_regex, '', string)
         for t_co_url in t_co_urls:
             response = requests.get(t_co_url.group(0))
             if response.history:
-                if not self.is_twitter_url(response.url):
-                    t_co_urls_sub += ('\n%s' % (response.url))
-
-        clean_string = re.sub(self.md_regex, r'\\\1', t_co_urls_sub)
+                string = string.replace(t_co_url, response.url)
+        clean_string = re.sub(self.md_regex, r'\\\1', string)
         return clean_string
 
 
@@ -298,7 +295,7 @@ def main():
                     sys.stdout.writelines('%s \n' % (message))
                     logging.info(message)
                     for submission in REDDIT_API.subreddit(subreddits).stream.submissions():
-                    # for submission in REDDIT_API.subreddit(subreddits).new():
+                        # for submission in REDDIT_API.subreddit(subreddits).new():
                         tweet_status_ids = []
                         if not HasVisited.redis_check(submission.id):
                             if Regex().is_twitter_url(submission.url):
