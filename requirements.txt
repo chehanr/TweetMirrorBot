@@ -1,9 +1,9 @@
-certifi==2017.7.27.1
+certifi==2018.1.18
 chardet==3.0.4
 idna==2.6
 oauthlib==2.0.6
-praw==5.2.0
-prawcore==0.12.0
+praw==5.3.0
+prawcore==0.13.0
 pyimgur==0.6.0
 redis==2.10.6
 requests==2.18.4
