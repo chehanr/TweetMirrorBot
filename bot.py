@@ -80,7 +80,7 @@ class GenerateReply:
 
         reply_body += ('%s' % (header_images.strip()))
         reply_body += ('\n')
-        reply_body += ('%(quotes)s%(body)s%(quotes)s"\n' % {
+        reply_body += ('%(quotes)s%(body)s%(quotes)s\n' % {
             'body': Regex().sanitize_text(self._tweet.full_text.strip()),
             'quotes': '"' if self._tweet.full_text else ''})
         reply_body += ('\n')
