@@ -286,17 +286,19 @@ def main():
     """
     try:
         with open(PATH + 'blacklist.txt') as file:
-            blacklist_lines = filter(None, (line.rstrip() for line in file))
+            blacklist_lines = [line.rstrip() for line in file]
     except FileNotFoundError as err:
         logging.error(err)
     else:
         try:
             with open(PATH + 'subreddits.txt') as file:
-                lines = filter(None, (line.rstrip() for line in file))
-                subreddits = '+'.join(line[1] for line in enumerate(lines)
-                                      if not line[1].startswith('#'))
-                subreddits = '-'.join(line[1] for line in enumerate(
-                    blacklist_lines) if not line[1].startswith('#'))
+                subreddit_lines = [line.rstrip() for line in file]
+                subreddits = '+'.join(line[1] for line in enumerate(
+                    subreddit_lines) if not line[1].startswith('#'))
+                if blacklist_lines:
+                    subreddits += '-'
+                    subreddits += '-'.join(line[1] for line in enumerate(
+                        blacklist_lines) if not line[1].startswith('#'))
                 if subreddits:
                     message = 'checking subreddits %s ...' % (subreddits)
                     sys.stdout.writelines('%s \n' % (message))
