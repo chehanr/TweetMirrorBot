@@ -107,7 +107,7 @@ class GenerateReply:
             })
 
         self.header_media += self.reply_body
-        return self.reply_body
+        return self.header_media
 
     def streamable(self, url):
         """Generate submission reply with streamable template."""
@@ -116,7 +116,7 @@ class GenerateReply:
         })
 
         self.header_media += self.reply_body
-        return self.reply_body
+        return self.header_media
 
 
 class UploadTo:
