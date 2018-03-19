@@ -174,7 +174,7 @@ class Regex:
         t_co_urls = re.finditer(self.t_co_regex, string)
         for t_co_url in t_co_urls:
             response = requests.get(t_co_url.group(0))
-            if response.history[1]:
+            if len(response.history) > 2:
                 if self.is_twitter_url(response.url):
                     string = string.replace(t_co_url.group(0), '')
                 else:
