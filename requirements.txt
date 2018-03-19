@@ -5,6 +5,7 @@ oauthlib==2.0.6
 praw==5.3.0
 prawcore==0.13.0
 pyimgur==0.6.0
+pystreamable==1.0.1
 redis==2.10.6
 requests==2.18.4
 requests-oauthlib==0.8.0

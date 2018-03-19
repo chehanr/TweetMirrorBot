@@ -15,6 +15,8 @@ import redis
 import requests
 import tweepy
 
+from pystreamable import StreamableApi
+
 CWD = os.getcwd()
 PATH = CWD + '/'
 
@@ -30,6 +32,8 @@ TWITTER_CONSUMER_SECRET = os.getenv('TWITTER_CONSUMER_SECRET')
 TWITTER_ACCESS_TOKEN_KEY = os.getenv('TWITTER_ACCESS_TOKEN_KEY')
 TWITTER_ACCESS_TOKEN_SECRET = os.getenv('TWITTER_ACCESS_TOKEN_SECRET')
 IMGUR_CLIENT_ID = os.getenv('IMGUR_CLIENT_ID')
+STREAMABLE_USERNAME = os.getenv('STREAMABLE_USERNAME')
+STREAMABLE_PASSWORD = os.getenv('STREAMABLE_PASSWORD')
 
 REPLY_FOOTER = (
     'beep^boop | [source](https://github.com/chehanr/TweetMirrorBot/ "Github")'
@@ -54,6 +58,8 @@ TWITTER_API = tweepy.API(TWITTER_AUTH)
 
 IMGUR_API = pyimgur.Imgur(IMGUR_CLIENT_ID)
 
+STREAMABLE_API = StreamableApi(STREAMABLE_USERNAME, STREAMABLE_PASSWORD)
+
 
 class GenerateReply:
     """Generate a reply.
@@ -63,43 +69,54 @@ class GenerateReply:
 
     def __init__(self, tweet):
         self._tweet = tweet
+        self.header_media = ''
+        self.reply_body = self.body()
+
+    def body(self):
+        date_time = datetime.datetime.strptime(
+            str(self._tweet.created_at), '%Y-%m-%d  %H:%M:%S')
+        self.reply_body = ('\n')
+        self.reply_body += ('%(quotes)s%(body)s%(quotes)s\n' % {
+            'body': Regex().sanitize_text(self._tweet.full_text.strip()),
+            'quotes': '"' if Regex().sanitize_text(self._tweet.full_text.strip()) else ''})
+        self.reply_body += ('\n')
+        self.reply_body += ('~ %(user_name)s ([@%(screen_name)s](https://twitter.com/%(screen_name)s/ "Twitter profile")) %(is_verified)s\n' % {
+            'user_name': self._tweet.user.name.strip(),
+            'screen_name': self._tweet.user.screen_name.strip(),
+            'is_verified': '^([verified])' if self._tweet.user.verified else ''})
+        self.reply_body += ('\n')
+        self.reply_body += ('^(Tweeted on %(date)s at %(time)s)\n' % {
+            'date': date_time.date(),
+            'time': date_time.time()
+        })
+        self.reply_body += ('\n')
+        self.reply_body += ('&nbsp;\n')
+        self.reply_body += ('\n\n')
+        self.reply_body += ('****\n')
+        self.reply_body += ('%s' % (REPLY_FOOTER.strip()))
+
+        return self.reply_body
 
     def imgur(self, urls):
         """Generate submission reply with imgur template."""
-        header_images = ''
-        reply_body = ''
-        date_time = datetime.datetime.strptime(
-            str(self._tweet.created_at), '%Y-%m-%d  %H:%M:%S')
-
         for i, imgur_image in enumerate(urls):
             i += 1
-            header_images += ('##[Imgur mirror image%(index)s](%(imgur)s "Imgur mirror image%(index)s")\n' % {
+            self.header_media += ('##[Imgur mirror image%(index)s](%(imgur)s "Imgur mirror image%(index)s")\n' % {
                 'index': str(i).rjust(2) if len(urls) > 1 else '',
                 'imgur': imgur_image
             })
 
-        reply_body += ('%s' % (header_images.strip()))
-        reply_body += ('\n')
-        reply_body += ('%(quotes)s%(body)s%(quotes)s\n' % {
-            'body': Regex().sanitize_text(self._tweet.full_text.strip()),
-            'quotes': '"' if Regex().sanitize_text(self._tweet.full_text.strip()) else ''})
-        reply_body += ('\n')
-        reply_body += ('~ %(user_name)s ([@%(screen_name)s](https://twitter.com/%(screen_name)s/ "Twitter profile")) %(is_verified)s\n' % {
-            'user_name': self._tweet.user.name.strip(),
-            'screen_name': self._tweet.user.screen_name.strip(),
-            'is_verified': '^([verified])' if self._tweet.user.verified else ''})
-        reply_body += ('\n')
-        reply_body += ('^(Tweeted on %(date)s at %(time)s)\n' % {
-            'date': date_time.date(),
-            'time': date_time.time()
-        })
-        reply_body += ('\n')
-        reply_body += ('&nbsp;\n')
-        reply_body += ('\n\n')
-        reply_body += ('****\n')
-        reply_body += ('%s' % (REPLY_FOOTER.strip()))
+        self.reply_body += self.header_media.strip()
+        return self.reply_body
 
-        return reply_body
+    def streamable(self, url):
+        """Generate submission reply with streamable template."""
+        self.header_media += ('##[Streamable mirror video](%(streamable)s "Streamable mirror video")\n' % {
+            'streamable': url
+        })
+
+        self.reply_body += self.header_media.strip()
+        return self.reply_body
 
 
 class UploadTo:
@@ -112,9 +129,11 @@ class UploadTo:
         return upload.link
 
     @classmethod
-    def streamable(cls, url):
+    def streamable(cls, url, streamable_title):
         """Upload media to streamable"""
-        return url
+        upload = STREAMABLE_API.import_video(url, streamable_title)
+        upload_url = ('https://streamable.com/%s' % (upload['shortcode']))
+        return upload_url
 
 
 class HasVisited:
@@ -257,6 +276,35 @@ def post_reply(tweet_status_id, submission):
                         photo, imgur_title, imgur_desc))
                 generated_reply = GenerateReply(
                     tweet_status.tweet).imgur(imgur_url_list)
+            except Exception as err:
+                logging.exception('failed to upload because %s', err)
+            else:
+                try:
+                    submission.reply(generated_reply)
+                except Exception as err:
+                    logging.exception('failed to reply because %s', err)
+                else:
+                    HasVisited.redis_set(submission.id, tweet_status_id)
+                    message = 'processed submission %s on /r/%s.' % (
+                        submission.id, submission.subreddit)
+                    sys.stdout.writelines('%s \n' % (message))
+                    logging.info(message)
+        else:
+            HasVisited.redis_set(submission.id, tweet_status_id)
+            message = 'reply found in submission %s in /r/%s, skipping...' % (
+                submission.id, submission.subreddit)
+            sys.stdout.writelines('%s \n' % (message))
+            logging.info(message)
+
+    elif tweet_status.media_url_type() == 'video':
+        streamable_title = 'Tweet by @%s (Mirror)' % (
+            tweet_status.tweet.user.name)
+        if not HasVisited.check_comments(submission):
+            try:
+                video = tweet_status.get_video()
+                video_url = UploadTo.streamable(video, streamable_title)
+                generated_reply = GenerateReply(
+                    tweet_status.tweet).streamable(video_url)
             except Exception as err:
                 logging.exception('failed to upload because %s', err)
             else:
