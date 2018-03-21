@@ -73,6 +73,7 @@ class GenerateReply:
         self.reply_body = self.body()
 
     def body(self):
+        """Reply body template."""
         date_time = datetime.datetime.strptime(
             str(self._tweet.created_at), '%Y-%m-%d  %H:%M:%S')
         self.reply_body = ('\n')
